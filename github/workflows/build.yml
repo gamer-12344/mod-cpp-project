@@ -1,0 +1,46 @@
+name: Build GDExtension Android Auto
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Clone godot-cpp repository
+        uses: actions/checkout@v4
+        with:
+          repository: godotengine/godot-cpp
+          ref: 4.2
+          path: godot-cpp
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install SCons
+        run: |
+          python -m pip install --upgrade pip
+          pip install scons
+
+      - name: Set up Android NDK
+        uses: nttld/setup-ndk@v3
+        with:
+          ndk-version: r26b
+          link-to-sdk: true
+
+      - name: Compile Godot C++ for Android
+        run: |
+          cd godot-cpp
+          scons platform=android target=template_release arch=arm64
+          scons platform=android target=template_release arch=arm32
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-so-libraries
+          path: |
+            **/bin/*.so
